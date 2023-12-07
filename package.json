@@ -18,7 +18,8 @@
     "build": "rm -r dist & npm run scripts && tsc -p tsconfig.build.json",
     "test": "npx tsm ./node_modules/uvu/bin.js ./test",
     "dev": "npm run build && node ./dist/main.js",
-    "scripts": "npx tsm scripts/create-link-types.ts"
+    "scripts": "npx tsm scripts/create-link-types.ts",
+    "publish": "npm run build && npm publish"
   },
   "files": [
     "./dist"
