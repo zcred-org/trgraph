@@ -20,7 +20,7 @@ trGraph.transform(11, ["uin16-bytes"]) // Uint8Array(2) [ 0, 16 ]
 ## Provided links
 
 ```typescript
-"utf8",
+  "utf8",
   "base64",
   "base32",
   "base16",
