@@ -16,7 +16,7 @@ function getObjValuePaths(
     const value = obj[key]!;
     if (isValue(value)) {
       paths.push(currentPath);
-    } else if (typeof value === "undefined" || value === null) {
+    } else if (value === null || typeof value !== "object") {
       continue;
     } else {
       getObjValuePaths(value, isValue, currentPath).forEach(path => paths.push(path));

@@ -68,4 +68,15 @@ test("objUtil putValue", () => {
   );
 });
 
+test("find paths", () => {
+  objUtil.getValuePaths({
+    private: {
+      name: {
+        type: "setup"
+      }
+    },
+    public: {}
+  }, (value) => value?.type === "reference");
+});
+
 test.run();
