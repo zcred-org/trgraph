@@ -1,6 +1,6 @@
 import * as u8a from "uint8arrays";
 import ieee754 from "ieee754";
-import { Obj, TrLink, TrNode, TrSchema } from "./types/index.js";
+import { TrLink, TrNode, TrSchema } from "./types/index.js";
 import { ISO3166 } from "./iso3166.js";
 import { objUtil } from "./util.js";
 
@@ -875,7 +875,7 @@ export class TrGraph {
     TTr extends Record<string, any> = Record<string, any>,
     TLin extends any[] = any[]
   >(
-    obj: Obj,
+    obj: Record<string, any>,
     trSchema: TrSchema
   ): {
     transformed: TTr,
