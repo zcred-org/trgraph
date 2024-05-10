@@ -561,9 +561,100 @@ test("0xhex & bytes", () => {
   );
 });
 
-test("", () => {
+test("isodate-bytesdate", () => {
   const trGraph = new TrGraph();
-  console.log(trGraph.transform(16, ["uint16-bytes"]));
+  a.equal(
+    trGraph.transform(
+      "2024-05-09T12:45:25.309Z",
+      ["isodate-bytesdate"]
+    ), new Uint8Array([
+      7, 232, 5, 9, 12,
+      45, 25, 1, 53
+    ]),
+    "1"
+  );
+  a.equal(
+    trGraph.transform(
+      "2022-12-31T00:00:00.255Z",
+      ["isodate-bytesdate"]
+    ), new Uint8Array([
+      7, 230, 12, 31, 0,
+      0, 0, 0, 255
+    ]),
+    "2"
+  );
 });
+
+test("bytesdate-isodate", () => {
+  const tg = new TrGraph();
+  a.equal(
+    tg.transform(
+      new Uint8Array([
+        7, 232, 5, 9, 12,
+        45, 25, 1, 53
+      ]),
+      ["bytesdate-isodate"]
+    ),
+    "2024-05-09T12:45:25.309Z",
+    "1"
+  );
+  a.equal(
+    tg.transform(
+      new Uint8Array([
+        7, 230, 12, 31, 0,
+        0, 0, 0, 255
+      ]),
+      ["bytesdate-isodate"]
+    ),
+    "2022-12-31T00:00:00.255Z",
+    "2"
+  );
+});
+
+test("bytesdate-unixtime & bytesdate-unixtime19", () => {
+  const tg = new TrGraph();
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1969-12-31").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    86400000n,
+    "1.1"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1970-01-02").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    86400000n + 2208988800000n,
+    "1.2"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date(1715415623999).toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    1715415623999n,
+    "2.1"
+  );
+  console.log(new Date(1715415623999));
+  a.equal(
+    tg.transform<BigInt>(
+      new Date(1715364560000).toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    1715364560000n + 2208988800000n,
+    "2.2"
+  );
+});
+
+test("bytesdate-bytes & bytes-bytesdate", () => {
+  const tg = new TrGraph();
+  const bytesdate = tg.transform(new Date().toISOString(), ["isodate-bytesdate"]);
+  const bytes = tg.transform(bytesdate, ["bytesdate-bytes"]);
+  a.equal(bytes, bytesdate, "1");
+  a.equal(tg.transform(bytes, ["bytes-bytesdate"]), bytesdate, "2");
+});
+
 
 test.run();

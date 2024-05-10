@@ -2,7 +2,7 @@ import * as u8a from "uint8arrays";
 import ieee754 from "ieee754";
 import { TrLink, TrNode, TrSchema } from "./types/index.js";
 import { ISO3166 } from "./iso3166.js";
-import { objUtil } from "./util.js";
+import { getDaysCountBetweenDates, objUtil } from "./util.js";
 
 const MS_FROM_1900_TO_1970 = 2208988800000;
 
@@ -216,7 +216,11 @@ export const BASE_NODES: Record<string, TrNode> = {
         return false;
       }
     }
-  }
+  },
+  "bytesdate": {
+    name: "bytesdate",
+    isType: (value: unknown) => value instanceof Uint8Array
+  },
 };
 
 function defaultLinks(): Record<string, TrLink> {
@@ -259,6 +263,7 @@ function toBigInt(bytes: Uint8Array): bigint {
 
 function numToBytes(num: number | bigint): Uint8Array {
   let target = typeof num === "number" ? BigInt(num) : num;
+  if (num === 0) return new Uint8Array([0]);
   const bytes: number[] = [];
   let count = 0;
   while (target !== 0n) {
@@ -824,8 +829,112 @@ export const BASE_LINKS: Record<string, TrLink> = {
         return `0x${u8a.toString(value, "hex")}`;
       } catch (e) { throw e;}
     }
+  },
+  "isodate-bytesdate": {
+    inputType: "isodate",
+    outputType: "bytesdate",
+    name: "isodate-bytesdate",
+    transform: (value: string) => {
+      try {
+        const date = new Date(value);
+        const _ms = numToBytes(date.getUTCMilliseconds());
+        const ms = _ms.length === 1 ? new Uint8Array([0, ..._ms]) : _ms;
+        const sec = numToBytes(date.getUTCSeconds());
+        const min = numToBytes(date.getUTCMinutes());
+        const hour = numToBytes(date.getUTCHours());
+        const day = numToBytes(date.getUTCDate());
+        const month = numToBytes(date.getUTCMonth() + 1);
+        const year = numToBytes(date.getUTCFullYear());
+        return new Uint8Array([...year, ...month, ...day, ...hour, ...min, ...sec, ...ms]);
+      } catch (e) {throw e;}
+    }
+  },
+  "bytesdate-isodate": {
+    inputType: "bytesdate",
+    outputType: "isodate",
+    name: "bytesdate-isodate",
+    transform: (value: number[] | Uint8Array) => {
+      const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+      const lastInx = bytes.length - 1;
+      const _ms = toBigInt((bytes.slice(lastInx - 1))).toString();
+      const ms = getZeroesStr(3 - _ms.length) + _ms;
+      const _sec = toBigInt(bytes.slice(lastInx - 2, lastInx - 1)).toString();
+      const sec = getZeroesStr(2 - _sec.length) + _sec;
+      const _min = toBigInt(bytes.slice(lastInx - 3, lastInx - 2)).toString();
+      const min = getZeroesStr(2 - _min.length) + _min;
+      const _hour = toBigInt(bytes.slice(lastInx - 4, lastInx - 3)).toString();
+      const hour = getZeroesStr(2 - _hour.length) + _hour;
+      const _day = toBigInt(bytes.slice(lastInx - 5, lastInx - 4)).toString();
+      const day = getZeroesStr(2 - _day.length) + _day;
+      const _month = toBigInt(bytes.slice(lastInx - 6, lastInx - 5)).toString();
+      const month = getZeroesStr(2 - _month.length) + _month;
+      const _year = toBigInt(bytes.slice(0, lastInx - 6)).toString();
+      const year = getZeroesStr(4 - _year.length) + _year;
+      return `${year}-${month}-${day}T${hour}:${min}:${sec}.${ms}Z`;
+    }
+  },
+  "bytesdate-unixtime": {
+    inputType: "bytesdate",
+    outputType: "unixtime",
+    name: "bytesdate-unixtime",
+    transform: (value: number[] | Uint8Array): bigint => {
+      return bytesDateToUnixTime(value);
+    }
+  },
+  "bytesdate-unixtime19": {
+    inputType: "bytesdate",
+    outputType: "unixtime19",
+    name: "bytesdate-unixtime19",
+    transform: (value: number[] | Uint8Array): bigint => {
+      return bytesDateToUnixTime(value) + BigInt(MS_FROM_1900_TO_1970);
+    }
+  },
+  "bytesdate-bytes": {
+    inputType: "bytesdate",
+    outputType: "bytes",
+    name: "bytesdate-bytes",
+    transform: (value: number[] | Uint8Array): Uint8Array => {
+      return value instanceof Uint8Array ? value : new Uint8Array(value);
+    }
+  },
+  "bytes-bytesdate": {
+    inputType: "bytes",
+    outputType: "bytesdate",
+    name: "bytes-bytesdate",
+    transform: (value: number[] | Uint8Array): Uint8Array => {
+      return value instanceof Uint8Array ? value : new Uint8Array(value);
+    }
   }
 };
+
+function bytesDateToUnixTime(value: Uint8Array | number[]): bigint {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  const lastInx = bytes.length - 1;
+  const ms = toBigInt((bytes.slice(lastInx - 1)));
+  const sec = toBigInt(bytes.slice(lastInx - 2, lastInx - 1));
+  const min = toBigInt(bytes.slice(lastInx - 3, lastInx - 2));
+  const hour = toBigInt(bytes.slice(lastInx - 4, lastInx - 3));
+  const day = toBigInt(bytes.slice(lastInx - 5, lastInx - 4));
+  const month = toBigInt(bytes.slice(lastInx - 6, lastInx - 5));
+  const year = toBigInt(bytes.slice(0, lastInx - 6));
+
+  const yearStr = getZeroesStr(4 - year.toString().length) + year.toString();
+  const monthStr = getZeroesStr(2 - month.toString().length) + month.toString();
+  const dayStr = getZeroesStr(2 - day.toString().length) + day.toString();
+  const daysCount = getDaysCountBetweenDates(
+    new Date(`1970-01-01`),
+    new Date(`${yearStr}-${monthStr}-${dayStr}`)
+  );
+  return (BigInt(daysCount) * BigInt(24 * 60 * 60 * 1000)) +
+    (hour * BigInt(60 * 60 * 1000)) +
+    (min * BigInt(60 * 1000)) +
+    (sec * BigInt(1000)) +
+    ms;
+}
+
+function getZeroesStr(length: number): string {
+  return Array(length).fill("0").join("");
+}
 
 export class TrGraph {
 
