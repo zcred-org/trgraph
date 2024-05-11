@@ -921,18 +921,28 @@ function bytesDateToUnixTime(value: Uint8Array | number[]): bigint {
   const yearStr = getZeroesStr(4 - year.toString().length) + year.toString();
   const monthStr = getZeroesStr(2 - month.toString().length) + month.toString();
   const dayStr = getZeroesStr(2 - day.toString().length) + day.toString();
-  const daysCount = getDaysCountBetweenDates(
-    new Date(`1970-01-01`),
-    new Date(`${yearStr}-${monthStr}-${dayStr}`)
-  );
-  return (BigInt(daysCount) * BigInt(24 * 60 * 60 * 1000)) +
-    (hour * BigInt(60 * 60 * 1000)) +
+  const hourStr = getZeroesStr(2 - hour.toString().length) + hour.toString();
+  const minStr = getZeroesStr(2 - min.toString().length) + min.toString();
+  const secStr = getZeroesStr(2 - sec.toString().length) + sec.toString();
+  const msStr = getZeroesStr(3 - ms.toString().length) + ms.toString();
+
+  const date1970 = new Date(`1970-01-01T00:00:00.000Z`);
+  const dateTarget = new Date(`${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minStr}:${secStr}.${msStr}Z`);
+  const daysCount = getDaysCountBetweenDates(date1970, dateTarget);
+
+  const msSum = (hour * BigInt(60 * 60 * 1000)) +
     (min * BigInt(60 * 1000)) +
     (sec * BigInt(1000)) +
     ms;
+  return (
+    dateTarget.getTime() >= date1970.getTime()
+      ? (BigInt(daysCount) * BigInt(24 * 3600 * 1000))
+      : (-BigInt(daysCount) * BigInt(24 * 3600 * 1000))
+  ) + msSum;
 }
 
 function getZeroesStr(length: number): string {
+  if (length < 0) return "";
   return Array(length).fill("0").join("");
 }
 
