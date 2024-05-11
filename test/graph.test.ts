@@ -561,9 +561,163 @@ test("0xhex & bytes", () => {
   );
 });
 
-test("", () => {
+test("isodate-bytesdate", () => {
   const trGraph = new TrGraph();
-  console.log(trGraph.transform(16, ["uint16-bytes"]));
+  a.equal(
+    trGraph.transform(
+      "2024-05-09T12:45:25.309Z",
+      ["isodate-bytesdate"]
+    ), new Uint8Array([
+      7, 232, 5, 9, 12,
+      45, 25, 1, 53
+    ]),
+    "1"
+  );
+  a.equal(
+    trGraph.transform(
+      "2022-12-31T00:00:00.255Z",
+      ["isodate-bytesdate"]
+    ), new Uint8Array([
+      7, 230, 12, 31, 0,
+      0, 0, 0, 255
+    ]),
+    "2"
+  );
 });
+
+test("bytesdate-isodate", () => {
+  const tg = new TrGraph();
+  a.equal(
+    tg.transform(
+      new Uint8Array([
+        7, 232, 5, 9, 12,
+        45, 25, 1, 53
+      ]),
+      ["bytesdate-isodate"]
+    ),
+    "2024-05-09T12:45:25.309Z",
+    "1"
+  );
+  a.equal(
+    tg.transform(
+      new Uint8Array([
+        7, 230, 12, 31, 0,
+        0, 0, 0, 255
+      ]),
+      ["bytesdate-isodate"]
+    ),
+    "2022-12-31T00:00:00.255Z",
+    "2"
+  );
+});
+
+test("bytesdate-unixtime & bytesdate-unixtime19", () => {
+  const tg = new TrGraph();
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1867-12-31T12:23:58.499Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("1867-12-31T12:23:58.499Z").getTime()),
+    "1"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1970-01-02T03:33:32.663Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    BigInt(new Date("1970-01-02T03:33:32.663Z").getTime() + 2208988800000),
+    "2"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("2024-10-31T03:33:32.663Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    BigInt(new Date("2024-10-31T03:33:32.663Z").getTime() + 2208988800000),
+    "3"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date(0).toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    0n,
+    "4"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date(0).toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    2208988800000n,
+    "5"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1867-12-31T12:23:58.499Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    BigInt(new Date("1867-12-31T12:23:58.499Z").getTime()) + 2208988800000n,
+    "6"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("0001-12-31T12:23:58.499Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime19"]
+    ),
+    BigInt(new Date("0001-12-31T12:23:58.499Z").getTime()) + 2208988800000n,
+    "7"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("3000-12-31T12:23:58.499Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("3000-12-31T12:23:58.499Z").getTime()),
+    "8"
+  )
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1967-12-31T12:23:58.499Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("1967-12-31T12:23:58.499Z").getTime()),
+    "9"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("2000-08-05").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("2000-08-05").getTime()),
+    "10"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1945-05-09").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("1945-05-09").getTime()),
+    "11"
+  );
+  a.equal(
+    tg.transform<BigInt>(
+      new Date("1969-12-31T23:59:59.999Z").toISOString(),
+      ["isodate-bytesdate", "bytesdate-unixtime"]
+    ),
+    BigInt(new Date("1969-12-31T23:59:59.999Z").getTime()),
+    "12"
+  );
+});
+
+test("bytesdate-bytes & bytes-bytesdate", () => {
+  const tg = new TrGraph();
+  const bytesdate = tg.transform(new Date().toISOString(), ["isodate-bytesdate"]);
+  const bytes = tg.transform(bytesdate, ["bytesdate-bytes"]);
+  a.equal(bytes, bytesdate, "1");
+  a.equal(tg.transform(bytes, ["bytes-bytesdate"]), bytesdate, "2");
+});
+
 
 test.run();

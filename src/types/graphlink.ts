@@ -28,6 +28,7 @@ export const GRAPH_LINKS = [
   "iso3166alpha2",
   "iso3166alpha3",
   "0xhex",
+  "bytesdate",
   "bytes-uint",
   "bytes-unixtime19",
   "bytes-unixtime",
@@ -260,7 +261,13 @@ export const GRAPH_LINKS = [
   "iso3166alpha2-iso3166numeric",
   "iso3166alpha3-iso3166numeric",
   "0xhex-bytes",
-  "bytes-0xhex"
+  "bytes-0xhex",
+  "isodate-bytesdate",
+  "bytesdate-isodate",
+  "bytesdate-unixtime",
+  "bytesdate-unixtime19",
+  "bytesdate-bytes",
+  "bytes-bytesdate"
 ] as const
 
 export type GraphLink = typeof GRAPH_LINKS[number]
